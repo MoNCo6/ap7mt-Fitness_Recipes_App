@@ -1,0 +1,141 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/gray"
+    tools:context=".EditRecipeActivity">
+
+    <!-- Toolbar s tlačidlom Späť a názvom -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:elevation="4dp"
+        android:padding="8dp">
+
+        <!-- Tlačidlo Späť -->
+        <ImageButton
+            android:id="@+id/btn_back_to_recipe"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/btn_bg"
+            android:padding="10dp"
+            android:src="@drawable/arrow_back"
+            android:contentDescription="Späť" />
+
+        <!-- Názov obrazovky -->
+        <TextView
+            android:id="@+id/toolbar_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center"
+            android:text="Uprav si recept"
+            android:textColor="@color/black"
+            android:textSize="20sp"
+            android:fontFamily="casual"
+            android:textStyle="bold" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <!-- Obsah obrazovky vo ScrollView -->
+    <ScrollView
+        android:id="@+id/main_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Pole na zadanie názvu receptu -->
+            <EditText
+                android:id="@+id/et_recipe_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Názov receptu"
+                android:fontFamily="casual"
+                android:textSize="16sp"
+                android:padding="8dp" />
+
+            <!-- Nutričné údaje -->
+            <EditText
+                android:id="@+id/et_nutrition_kcal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Kalórie (kcal)"
+                android:fontFamily="casual"
+                android:textSize="16sp"
+                android:padding="8dp"
+                android:layout_marginTop="8dp" />
+
+            <EditText
+                android:id="@+id/et_nutrition_carbs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Karbohydráty (g)"
+                android:fontFamily="casual"
+                android:textSize="16sp"
+                android:padding="8dp"
+                android:layout_marginTop="8dp" />
+
+            <EditText
+                android:id="@+id/et_nutrition_fats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Tuky (g)"
+                android:fontFamily="casual"
+                android:textSize="16sp"
+                android:padding="8dp"
+                android:layout_marginTop="8dp" />
+
+            <EditText
+                android:id="@+id/et_nutrition_proteins"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Proteíny (g)"
+                android:fontFamily="casual"
+                android:textSize="16sp"
+                android:padding="8dp"
+                android:layout_marginTop="8dp" />
+
+            <!-- Ingrediencie -->
+            <EditText
+                android:id="@+id/et_ingredients"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Ingrediencie (napr. cukor 2 kg, múka 1 kg)"
+                android:fontFamily="casual"
+                android:textSize="16sp"
+                android:padding="8dp"
+                android:layout_marginTop="8dp" />
+
+            <!-- Inštrukcie -->
+            <EditText
+                android:id="@+id/et_instructions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Inštrukcie"
+                android:fontFamily="casual"
+                android:textSize="16sp"
+                android:padding="8dp"
+                android:layout_marginTop="8dp" />
+
+            <!-- Tlačidlo na uloženie zmien -->
+            <Button
+                android:id="@+id/btn_save_changes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Uložiť zmeny"
+                android:fontFamily="casual"
+                android:textStyle="bold"
+                android:background="@drawable/btn_bg1"
+                android:textColor="@color/white"
+                android:padding="12dp"
+                android:layout_marginTop="16dp" />
+        </LinearLayout>
+    </ScrollView>
+</RelativeLayout>
