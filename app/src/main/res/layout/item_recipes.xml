@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_margin="10dp">
+
+    <!-- CardView obalujúca obrázok jedla -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="220dp"
+        android:layout_height="380dp"
+        app:cardCornerRadius="10dp"
+        app:cardElevation="5dp">
+
+        <!-- Obrázok jedla -->
+        <ImageView
+            android:id="@+id/img_dish"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/splash_bg" />
+
+        <!-- Ikona obľúbeného receptu -->
+        <ImageView
+            android:id="@+id/img_favorite_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="8dp"
+            android:src="@drawable/fav_unfill"
+            android:background="@drawable/btn_bg"
+            android:padding="5dp" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- TextView pre názov receptu -->
+    <TextView
+        android:id="@+id/tv_recipe_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dish name"
+        android:textSize="15sp"
+        android:textColor="@color/black"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:fontFamily="casual"
+        android:textStyle="bold"
+        android:paddingStart="15dp"
+        android:paddingTop="5dp" />
+</LinearLayout>
