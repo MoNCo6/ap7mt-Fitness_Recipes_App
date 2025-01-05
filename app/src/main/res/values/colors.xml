@@ -4,4 +4,9 @@
     <color name="brown">#433232</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="red">#FA0202</color>
+    <color name="green">#4CAF50</color>
+    <color name="gray">#f5f5f5</color>
+    <color name="hintTextColor">#787878</color>
+    <color name="transparent">#00000000</color>
 </resources>
