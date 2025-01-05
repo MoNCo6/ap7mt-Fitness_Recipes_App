@@ -2,20 +2,22 @@ package com.example.finalproject_fitrecipesapp
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
+import android.widget.Button
 
 class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
-        // Delay for splash screen
-        Handler(Looper.getMainLooper()).postDelayed({
-            val intent = Intent(this, MainActivity::class.java)
+        // Nájdeme tlačidlo pomocou jeho ID
+        val btnGetStarted: Button = findViewById(R.id.btn_get_started)
+
+        // Nastavenie ClickListener na tlačidlo
+        btnGetStarted.setOnClickListener {
+            val intent = Intent(this, HomeActivity::class.java)
             startActivity(intent)
             finish()
-        }, 3000) // 3000 milliseconds = 3 seconds
+        }
     }
 }
