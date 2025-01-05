@@ -1,0 +1,142 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/gray"
+    tools:context=".AddRecipeActivity">
+
+    <!-- Toolbar s tlačidlom Späť -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:elevation="4dp">
+
+        <ImageButton
+            android:id="@+id/img_toolbar_btn_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:background="@drawable/btn_bg"
+            android:padding="10dp"
+            android:src="@drawable/arrow_back" />
+
+        <TextView
+            android:id="@+id/toolbar_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Vytvor si recept"
+            android:textColor="@color/black"
+            android:textSize="20sp"
+            android:fontFamily="casual"
+            android:textStyle="bold"
+            android:gravity="center" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <!-- ScrollView pre vstupy -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Názov receptu -->
+            <EditText
+                android:id="@+id/et_recipe_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Názov receptu"
+                android:fontFamily="casual"
+                android:inputType="text" />
+
+            <!-- Nutričné detaily -->
+            <EditText
+                android:id="@+id/et_nutrition_kcal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Kalórie (kcal)"
+                android:fontFamily="casual"
+                android:inputType="number" />
+
+            <EditText
+                android:id="@+id/et_nutrition_carbs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Carbohydráty (g)"
+                android:fontFamily="casual"
+                android:inputType="numberDecimal" />
+
+            <EditText
+                android:id="@+id/et_nutrition_fats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Tuky (g)"
+                android:fontFamily="casual"
+                android:inputType="numberDecimal" />
+
+            <EditText
+                android:id="@+id/et_nutrition_proteins"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Proteiny (g)"
+                android:fontFamily="casual"
+                android:inputType="numberDecimal" />
+
+            <!-- Ingrediencie -->
+            <EditText
+                android:id="@+id/et_ingredients"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Ingrediencie (oddeľ čiarkou)"
+                android:fontFamily="casual"
+                android:inputType="textMultiLine" />
+
+            <!-- Inštrukcie -->
+            <EditText
+                android:id="@+id/et_instructions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Inštrukcie na prípravu receptu"
+                android:fontFamily="casual"
+                android:inputType="textMultiLine"
+                android:minHeight="150dp" />
+
+            <!-- Spinner pre kategóriu -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vyber si kategóriu"
+                android:fontFamily="casual"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp" />
+
+            <Spinner
+                android:id="@+id/spinner_category"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="casual"
+                android:spinnerMode="dropdown" />
+
+            <!-- Tlačidlo na uloženie -->
+            <Button
+                android:id="@+id/btn_save_recipe"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ulož si recept"
+                android:fontFamily="casual"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:background="@drawable/btn_bg"
+                android:layout_marginTop="20dp" />
+        </LinearLayout>
+    </ScrollView>
+</RelativeLayout>
