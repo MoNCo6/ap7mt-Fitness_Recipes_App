@@ -6,39 +6,44 @@
     android:background="@color/white"
     tools:context=".SplashActivity">
 
+    <!-- Pozadie aplikácie -->
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:src="@drawable/splash_bg" />
 
+    <!-- Kontejner pre tlačidlo a ProgressBar -->
     <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true"
-        android:layout_marginBottom="20dp"
-        android:layout_marginStart="20dp"
+        android:layout_margin="20dp"
         android:gravity="center">
 
+        <!-- Tlačidlo "Poďme na to" -->
         <Button
+            android:id="@+id/btn_get_started"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/btnGetStarted"
+            android:text="Poďme na to"
+            android:fontFamily="casual"
+            android:textStyle="bold"
             android:textColor="@color/white"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
-            android:visibility="invisible"
             android:background="@drawable/btn_bg"
-            android:text="Get Started" />
+            android:visibility="visible" />
 
+        <!-- ProgressBar pre načítanie -->
         <ProgressBar
+            android:id="@+id/loader"
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_gravity="center"
-            android:outlineAmbientShadowColor="@color/brown"
-            android:id="@+id/loader" />
-
+            android:visibility="gone"
+            android:outlineAmbientShadowColor="@color/brown" />
     </FrameLayout>
 
 </RelativeLayout>
