@@ -1,19 +1,19 @@
-package com.example.finalproject_fitrecipesapp
+package com.example.finalproject_fitrecipesapp.view
 
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import com.example.finalproject_fitrecipesapp.api.ApiClient
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import com.example.finalproject_fitrecipesapp.R
 import com.example.finalproject_fitrecipesapp.api.Recipe
-import com.example.finalproject_fitrecipesapp.api.RecipeCategoryApi
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
+// Detail obrazovka, ktorá zobrazuje podrobnosti o konkrétnom recepte a umožňuje jeho úpravu, mazanie či označenie ako obľúbený.
 class DetailActivity : AppCompatActivity() {
 
+    // UI prvky
     private lateinit var tvInstructions: TextView
     private lateinit var tvName: TextView
     private lateinit var tvIngredients: TextView
@@ -23,30 +23,45 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var btnDeleteRecipe: Button
     private lateinit var btnEditRecipe: Button
     private lateinit var btnFavorite: ImageButton
+
+    // ID receptu, ktorý sa zobrazuje / upravuje
     private lateinit var recipeId: String
-    private var recipe: Recipe? = null // Uchováva aktuálny recept
+
+    // ViewModel zabezpečujúci logiku pre túto obrazovku
+    private lateinit var viewModel: DetailViewModel
 
     companion object {
+        // Konštanta pre zistenie, či sa vraciame z úpravy receptu
         private const val EDIT_RECIPE_REQUEST_CODE = 100
     }
 
+    // Metóda volaná pri vytváraní obrazovky. Inicializuje ViewModel, UI prvky a nastavuje pozorovanie dát.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_detail)
 
-        initializeViews() // Inicializácia UI komponentov
-        setupListeners()  // Nastavenie listenerov pre akcie používateľa
+        // Inicializuje ViewModel
+        viewModel = ViewModelProvider(this).get(DetailViewModel::class.java)
 
+        // Nastavíme UI prvky a listenery
+        initializeViews()
+        setupListeners()
+
+        // Získame ID receptu z predchádzajúcej obrazovky (HomeActivity)
         recipeId = intent.getStringExtra("RECIPE_ID").orEmpty()
 
+        // Ak máme platné ID, načítame detaily receptu z ViewModelu
         if (recipeId.isNotBlank()) {
-            fetchRecipeDetails() // Načítanie detailov receptu z API
+            viewModel.fetchRecipeDetails(recipeId)
         } else {
             showToast("Neplatné ID receptu.")
         }
+
+        // Začneme pozorovať LiveData vo ViewModeli
+        observeViewModel()
     }
 
-    // Inicializácia UI komponentov
+    //  Inicializácia UI komponentov. Priradí premennej príslušné prvky na obrazovke.
     private fun initializeViews() {
         tvInstructions = findViewById(R.id.tv_instructions)
         tvName = findViewById(R.id.tv_recipe_name)
@@ -59,24 +74,78 @@ class DetailActivity : AppCompatActivity() {
         btnFavorite = findViewById(R.id.img_toolbar_btn_fav)
     }
 
-    // Nastavenie listenerov pre tlačidlá
+    //  Listenery pre UI akcie. Nastavenie kliknutí na rôzne tlačidlá.
     private fun setupListeners() {
+        // Tlačidlo 'Späť'
         btnBack.setOnClickListener { onBackPressed() }
-
-        btnDeleteRecipe.setOnClickListener {
-            if (recipe?.isFavorite == true) {
-                showCannotDeleteFavoriteDialog()
-            } else {
-                showDeleteConfirmationDialog()
-            }
-        }
-
+        // Tlačidlo 'Zmazať recept'
+        btnDeleteRecipe.setOnClickListener { onDeleteRecipeClicked() }
+        // Tlačidlo 'Upraviť recept'
         btnEditRecipe.setOnClickListener { openEditRecipeActivity() }
-
+        // Tlačidlo 'Obľúbený'
         btnFavorite.setOnClickListener { toggleFavorite() }
     }
 
-    // Zobrazenie upozornenia pre obľúbené recepty
+    // Rozhodnutie, či je možné recept vymazať, alebo je obľúbený. Podľa toho buď zobrazí upozornenie, alebo zmaže recept.
+    private fun onDeleteRecipeClicked() {
+        val currentRecipe = viewModel.recipe.value
+        if (currentRecipe?.isFavorite == true) {
+            showCannotDeleteFavoriteDialog()
+        } else {
+            showDeleteConfirmationDialog()
+        }
+    }
+
+    // Sledovanie ViewModelu - keď sa recept načíta alebo zmení. Keď sa zmení 'recipe', zobrazí ho na obrazovke.
+    private fun observeViewModel() {
+        viewModel.recipe.observe(this, Observer { recipe ->
+            if (recipe != null) {
+                bindRecipeDetails(recipe)
+                updateFavoriteIcon(recipe.isFavorite)
+            } else {
+                showToast("Recept sa nenašiel.")
+            }
+        })
+    }
+
+    //  Obsluha stavu obľúbenosti (isFavorite) receptu cez ViewModel. Po úspechu aktualizuje ikonu a odošle informáciu späť do HomeActivity.
+    private fun toggleFavorite() {
+        viewModel.toggleFavorite(
+            onSuccess = { newFavoriteState ->
+                // Zmeníme ikonu (vyplnená/nevypnená)
+                updateFavoriteIcon(newFavoriteState)
+                // Zobrazíme informáciu používateľovi
+                val message = if (newFavoriteState) "Pridané medzi obľúbené" else "Odstránené z obľúbených"
+                showToast(message)
+                // Odošleme do HomeActivity, že recept bol aktualizovaný
+                sendFavoriteUpdateResult(recipeId, newFavoriteState)
+            },
+            onFailure = {
+                // Ak sa update nepodarí, oznámime chybu
+                showToast("Chyba pri ukladaní do obľúbených.")
+            }
+        )
+    }
+
+    // Upraví ikonku podľa stavu obľúbenosti.
+    private fun updateFavoriteIcon(isFavorite: Boolean) {
+        btnFavorite.setImageResource(
+            if (isFavorite) R.drawable.fav_fill else R.drawable.fav_unfill
+        )
+    }
+
+    // Vráti informáciu o zmene obľúbeného stavu späť do HomeActivity.
+    private fun sendFavoriteUpdateResult(recipeId: String, isFavorite: Boolean) {
+        Intent().apply {
+            putExtra("UPDATED_RECIPE_ID", recipeId)
+            putExtra("IS_FAVORITE", isFavorite)
+        }.also {
+            setResult(RESULT_OK, it)
+        }
+    }
+
+    // Mazanie receptu
+    // Dialog oznamujúci, že recept je obľúbený a nemožno ho vymazať.
     private fun showCannotDeleteFavoriteDialog() {
         android.app.AlertDialog.Builder(this)
             .setTitle("Pozor!")
@@ -86,50 +155,7 @@ class DetailActivity : AppCompatActivity() {
             .show()
     }
 
-    // Prepnutie stavu obľúbenosti receptu
-    private fun toggleFavorite() {
-        recipe?.let {
-            it.isFavorite = !it.isFavorite
-            updateFavoriteIcon(it.isFavorite)
-            saveFavoriteState(it)
-            sendFavoriteUpdateResult(it)
-        }
-    }
-
-    // Aktualizácia ikony pre obľúbenosť
-    private fun updateFavoriteIcon(isFavorite: Boolean) {
-        btnFavorite.setImageResource(
-            if (isFavorite) R.drawable.fav_fill else R.drawable.fav_unfill
-        )
-    }
-
-    // Uloženie stavu obľúbenosti na server
-    private fun saveFavoriteState(recipe: Recipe) {
-        ApiClient.instance.create(RecipeCategoryApi::class.java)
-            .updateRecipe(recipe._id!!, recipe)
-            .enqueue(object : Callback<Void> {
-                override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                    val message = if (recipe.isFavorite) "Pridané medzi obľúbené" else "Odstránené z obľúbených"
-                    showToast(message)
-                }
-
-                override fun onFailure(call: Call<Void>, t: Throwable) {
-                    showToast("Chyba pri ukladaní do obľúbených.")
-                }
-            })
-    }
-
-    // Odoslanie aktualizácie obľúbeného stavu späť
-    private fun sendFavoriteUpdateResult(recipe: Recipe) {
-        Intent().apply {
-            putExtra("UPDATED_RECIPE_ID", recipe._id)
-            putExtra("IS_FAVORITE", recipe.isFavorite)
-        }.also {
-            setResult(RESULT_OK, it)
-        }
-    }
-
-    // Zobrazenie potvrdenia mazania receptu
+    // Dialog na potvrdenie vymazania receptu.
     private fun showDeleteConfirmationDialog() {
         android.app.AlertDialog.Builder(this)
             .setTitle("Vymazanie receptu")
@@ -140,30 +166,20 @@ class DetailActivity : AppCompatActivity() {
             .show()
     }
 
-    // Načítanie detailov receptu z API
-    private fun fetchRecipeDetails() {
-        ApiClient.instance.create(RecipeCategoryApi::class.java)
-            .getRecipeById(recipeId)
-            .enqueue(object : Callback<Recipe> {
-                override fun onResponse(call: Call<Recipe>, response: Response<Recipe>) {
-                    if (response.isSuccessful) {
-                        response.body()?.let {
-                            recipe = it
-                            bindRecipeDetails(it)
-                            updateFavoriteIcon(it.isFavorite)
-                        } ?: showToast("Recept sa nenašiel.")
-                    } else {
-                        handleError("Failed to load recipe details.")
-                    }
-                }
-
-                override fun onFailure(call: Call<Recipe>, t: Throwable) {
-                    handleError("Error loading recipe details.", t)
-                }
-            })
+    // Zavolá ViewModel, aby vymazal recept zo servera. Po úspechu ukončí túto obrazovku.
+    private fun deleteRecipe() {
+        viewModel.deleteRecipe(recipeId,
+            onSuccess = {
+                showToast("Recept bol úspešne odstránený!")
+                setResultAndFinish()
+            },
+            onFailure = {
+                showToast("Failed to delete recipe.")
+            }
+        )
     }
 
-    // Zobrazenie detailov receptu v UI
+    //  Zobrazenie detailov receptu v UI. Vyplní textové polia detailu receptu údajmi.
     private fun bindRecipeDetails(recipe: Recipe) {
         tvName.text = recipe.name
         tvInstructions.text = recipe.instructions.ifEmpty { "Žiadne inštrukcie." }
@@ -179,27 +195,7 @@ class DetailActivity : AppCompatActivity() {
         """.trimIndent()
     }
 
-    // Mazanie receptu
-    private fun deleteRecipe() {
-        ApiClient.instance.create(RecipeCategoryApi::class.java)
-            .deleteRecipeById(recipeId)
-            .enqueue(object : Callback<Void> {
-                override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                    if (response.isSuccessful) {
-                        showToast("Recept bol úspešne odstránený!")
-                        setResultAndFinish()
-                    } else {
-                        handleError("Failed to delete recipe.")
-                    }
-                }
-
-                override fun onFailure(call: Call<Void>, t: Throwable) {
-                    handleError("Error deleting recipe.", t)
-                }
-            })
-    }
-
-    // Otvorenie aktivity na úpravu receptu
+    // Editácia receptu. Otvorí obrazovku na úpravu receptu s ID tohto receptu.
     private fun openEditRecipeActivity() {
         val intent = Intent(this, EditRecipeActivity::class.java).apply {
             putExtra("RECIPE_ID", recipeId)
@@ -207,23 +203,26 @@ class DetailActivity : AppCompatActivity() {
         startActivityForResult(intent, EDIT_RECIPE_REQUEST_CODE)
     }
 
+    // Spracuje výsledok z EditRecipeActivity. Ak recept upravíme, znovu načítame jeho detaily.
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == EDIT_RECIPE_REQUEST_CODE && resultCode == RESULT_OK) {
             val updatedRecipeId = data?.getStringExtra("UPDATED_RECIPE_ID")
 
+            // Vrátime info aj do HomeActivity, že recept bol upravený
             Intent().apply {
                 putExtra("UPDATED_RECIPE_ID", updatedRecipeId)
             }.also {
                 setResult(RESULT_OK, it)
             }
 
-            fetchRecipeDetails()
+            // Znova načítame detaily receptu z ViewModelu
+            viewModel.fetchRecipeDetails(recipeId)
         }
     }
 
-    // Nastavenie výsledku pre HomeActivity a ukončenie aktivity
+    //  Dokončenie a návrat do HomeActivity. Nastaví výsledok a ukončí túto obrazovku.
     private fun setResultAndFinish() {
         Intent().apply {
             putExtra("DELETED_RECIPE_ID", recipeId)
@@ -233,14 +232,8 @@ class DetailActivity : AppCompatActivity() {
         finish()
     }
 
-    // Zobrazenie správy pre používateľa
+    // Zobrazenie Toast správy používateľovi.
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
-    // Zaznamenanie chyby
-    private fun handleError(message: String, throwable: Throwable? = null) {
-        Log.e("DetailActivity", message, throwable)
-        showToast(message)
     }
 }
