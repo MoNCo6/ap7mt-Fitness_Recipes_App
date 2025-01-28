@@ -1,20 +1,20 @@
-package com.example.finalproject_fitrecipesapp
+package com.example.finalproject_fitrecipesapp.view
 
 import android.content.Intent
 import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import com.example.finalproject_fitrecipesapp.api.ApiClient
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import com.example.finalproject_fitrecipesapp.R
 import com.example.finalproject_fitrecipesapp.api.Ingredient
 import com.example.finalproject_fitrecipesapp.api.Nutrition
 import com.example.finalproject_fitrecipesapp.api.Recipe
-import com.example.finalproject_fitrecipesapp.api.RecipeCategoryApi
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
+// Aktivita určená na úpravu existujúceho receptu.
 class EditRecipeActivity : AppCompatActivity() {
 
+    // UI prvky na zadávanie názvu, ingrediencií, inštrukcií a nutričných hodnôt.
     private lateinit var etRecipeName: EditText
     private lateinit var etIngredients: EditText
     private lateinit var etInstructions: EditText
@@ -24,25 +24,48 @@ class EditRecipeActivity : AppCompatActivity() {
     private lateinit var etNutritionProteins: EditText
     private lateinit var btnSaveChanges: Button
     private lateinit var btnBackToRecipe: ImageButton
+
+    // ID receptu, ktorý upravujeme.
     private lateinit var recipeId: String
+
+    // Pôvodná kategória receptu a stav obľúbenosti.
     private var originalCategoryId: String = ""
-    private var isFavorite: Boolean = false // Uchovanie stavu obľúbenosti
+    private var isFavorite: Boolean = false
+
+    // ViewModel pre prácu s receptom a jeho úpravou.
+    private lateinit var viewModel: EditRecipeViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_recipe)
 
-        initializeViews() // Inicializácia UI komponentov
+        // Inicializácia ViewModelu.
+        viewModel = ViewModelProvider(this).get(EditRecipeViewModel::class.java)
 
+        // Nastavenie UI komponentov.
+        initializeViews()
+
+        // Načítame ID receptu z predchádzajúcej aktivity.
         recipeId = intent.getStringExtra("RECIPE_ID").orEmpty()
 
-        if (recipeId.isNotBlank()) fetchRecipeDetails() // Načítanie detailov receptu
+        // Ak je ID platné, načítame detaily receptu.
+        if (recipeId.isNotBlank()) {
+            viewModel.fetchRecipeDetails(recipeId, onError = { msg ->
+                showToast(msg)
+            })
+        }
 
-        btnSaveChanges.setOnClickListener { updateRecipe() } // Uloženie zmien
-        btnBackToRecipe.setOnClickListener { finish() } // Návrat späť
+        // Pozorujeme dáta z ViewModelu, aby sme zobrazili načítaný recept.
+        observeViewModel()
+
+        // Kliknutie na tlačidlo "Uložiť zmeny".
+        btnSaveChanges.setOnClickListener { updateRecipe() }
+
+        // Kliknutie na tlačidlo "Späť".
+        btnBackToRecipe.setOnClickListener { finish() }
     }
 
-    // Inicializuje UI komponenty
+    // Nastavenie referencií na UI prvky.
     private fun initializeViews() {
         etRecipeName = findViewById(R.id.et_recipe_name)
         etIngredients = findViewById(R.id.et_ingredients)
@@ -55,35 +78,25 @@ class EditRecipeActivity : AppCompatActivity() {
         btnBackToRecipe = findViewById(R.id.btn_back_to_recipe)
     }
 
-    // Načíta detaily receptu zo servera
-    private fun fetchRecipeDetails() {
-        ApiClient.instance.create(RecipeCategoryApi::class.java)
-            .getRecipeById(recipeId)
-            .enqueue(object : Callback<Recipe> {
-                override fun onResponse(call: Call<Recipe>, response: Response<Recipe>) {
-                    if (response.isSuccessful) {
-                        response.body()?.let { recipe ->
-                            bindRecipeDetails(recipe) // Zobrazenie detailov receptu
-                            originalCategoryId = recipe.categoryId
-                            isFavorite = recipe.isFavorite  // Uloženie stavu obľúbenosti
-                        } ?: showToast("Recept sa nenašiel.")
-                    } else {
-                        showToast("Nepodarilo sa načítať recept.")
-                    }
-                }
-
-                override fun onFailure(call: Call<Recipe>, t: Throwable) {
-                    showToast("Chyba pri načítavaní receptu.")
-                }
-            })
+    // Sledujeme LiveData z ViewModelu, aby sme zobrazili detaily načítaného receptu.
+    private fun observeViewModel() {
+        viewModel.recipe.observe(this, Observer { loadedRecipe ->
+            if (loadedRecipe != null) {
+                bindRecipeDetails(loadedRecipe)
+                originalCategoryId = loadedRecipe.categoryId
+                isFavorite = loadedRecipe.isFavorite
+            }
+        })
     }
 
-    // Zobrazuje načítané detaily receptu na UI
+    // Vypĺňame polia obrazovky dátami z receptu.
     private fun bindRecipeDetails(recipe: Recipe) {
         etRecipeName.setText(recipe.name)
-        etIngredients.setText(recipe.ingredients.joinToString(", ") {
-            "${it.name} ${it.weight ?: ""} ${it.unit}"
-        })
+        etIngredients.setText(
+            recipe.ingredients.joinToString(", ") {
+                "${it.name} ${it.weight ?: ""} ${it.unit}"
+            }
+        )
         etInstructions.setText(recipe.instructions)
         etNutritionKcal.setText(recipe.nutrition.kcal.toString())
         etNutritionCarbs.setText(recipe.nutrition.carbohydrates.toString())
@@ -91,14 +104,14 @@ class EditRecipeActivity : AppCompatActivity() {
         etNutritionProteins.setText(recipe.nutrition.proteins.toString())
     }
 
-    // Aktualizuje recept a uloží ho na server
+    // Vytvorí nový Recipe z vyplnených polí a zavolá aktualizáciu vo ViewModeli.
     private fun updateRecipe() {
         val updatedRecipe = Recipe(
             name = etRecipeName.text.toString(),
             ingredients = parseIngredients(etIngredients.text.toString()),
             instructions = etInstructions.text.toString(),
             categoryId = originalCategoryId, // Zachovanie pôvodnej kategórie
-            isFavorite = isFavorite, // Zachovanie stavu obľúbenosti
+            isFavorite = isFavorite,         // Zachovanie stavu obľúbenosti
             nutrition = Nutrition(
                 perServing = "100g",
                 kcal = etNutritionKcal.text.toString().toDoubleOrNull() ?: 0.0,
@@ -108,28 +121,24 @@ class EditRecipeActivity : AppCompatActivity() {
             )
         )
 
-        ApiClient.instance.create(RecipeCategoryApi::class.java)
-            .updateRecipe(recipeId, updatedRecipe)
-            .enqueue(object : Callback<Void> {
-                override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                    if (response.isSuccessful) {
-                        val intent = Intent().apply {
-                            putExtra("UPDATED_RECIPE_ID", recipeId)
-                        }
-                        setResult(RESULT_OK, intent)
-                        finish()
-                    } else {
-                        showToast("Recept sa nepodarilo aktualizovať.")
-                    }
+        // Zavoláme update vo ViewModeli a zareagujeme na výsledok
+        viewModel.updateRecipe(
+            recipeId = recipeId,
+            updatedRecipe = updatedRecipe,
+            onSuccess = {
+                val intent = Intent().apply {
+                    putExtra("UPDATED_RECIPE_ID", recipeId)
                 }
-
-                override fun onFailure(call: Call<Void>, t: Throwable) {
-                    showToast("Chyba pri aktualizácii receptu.")
-                }
-            })
+                setResult(RESULT_OK, intent)
+                finish()
+            },
+            onError = { msg ->
+                showToast(msg)
+            }
+        )
     }
 
-    // Rozdelí vstupný reťazec ingrediencií na zoznam objektov `Ingredient`
+    // Rozdelí reťazec ingrediencií na objekty Ingredient.
     private fun parseIngredients(input: String): List<Ingredient> {
         return input.split(",").mapNotNull { ing ->
             val parts = ing.trim().split(" ")
@@ -143,7 +152,7 @@ class EditRecipeActivity : AppCompatActivity() {
         }
     }
 
-    // Zobrazí toast so správou
+    // Zobrazí toast s odkazom pre používateľa.
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }

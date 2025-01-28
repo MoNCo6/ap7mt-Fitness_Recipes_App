@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/gray"
-    tools:context=".EditRecipeActivity">
+    tools:context=".view.EditRecipeActivity">
 
     <!-- Toolbar s tlačidlom Späť a názvom -->
     <androidx.appcompat.widget.Toolbar
