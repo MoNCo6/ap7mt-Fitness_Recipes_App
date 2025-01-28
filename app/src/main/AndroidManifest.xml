@@ -22,7 +22,7 @@
 
         <!-- Splash Screen -->
         <activity
-            android:name=".SplashActivity"
+            android:name=".view.SplashActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.FinalProject_FitRecipesApp">
@@ -34,22 +34,22 @@
 
         <!-- Main Home Activity -->
         <activity
-            android:name=".HomeActivity"
+            android:name=".view.HomeActivity"
             android:exported="true" />
 
         <!-- Detail Activity -->
         <activity
-            android:name=".DetailActivity"
+            android:name=".view.DetailActivity"
             android:exported="true" />
 
         <!-- Add Recipe Activity -->
         <activity
-            android:name=".AddRecipeActivity"
+            android:name=".view.AddRecipeActivity"
             android:exported="true" />
 
         <!-- Edit Recipe Activity -->
         <activity
-            android:name=".EditRecipeActivity"
+            android:name=".view.EditRecipeActivity"
             android:exported="true"/>
     </application>
 </manifest>
