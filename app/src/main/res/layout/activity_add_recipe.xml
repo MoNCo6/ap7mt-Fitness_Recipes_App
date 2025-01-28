@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/gray"
-    tools:context=".AddRecipeActivity">
+    tools:context=".view.AddRecipeActivity">
 
     <!-- Toolbar s tlačidlom Späť -->
     <androidx.appcompat.widget.Toolbar

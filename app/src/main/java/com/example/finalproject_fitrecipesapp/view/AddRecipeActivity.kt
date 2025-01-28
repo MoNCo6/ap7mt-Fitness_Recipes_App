@@ -1,17 +1,20 @@
-package com.example.finalproject_fitrecipesapp
+package com.example.finalproject_fitrecipesapp.view
 
 import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import com.example.finalproject_fitrecipesapp.api.*
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import com.example.finalproject_fitrecipesapp.R
+import com.example.finalproject_fitrecipesapp.api.ApiClient
+import com.example.finalproject_fitrecipesapp.api.Ingredient
+import com.example.finalproject_fitrecipesapp.api.Nutrition
+import com.example.finalproject_fitrecipesapp.api.Recipe
 
+// Aktivita zodpovedná za pridanie nového receptu do systému.
 class AddRecipeActivity : AppCompatActivity() {
 
-    private val categoryMap = mutableMapOf<String, String>() // Mapovanie názvov kategórií na ich ID
-
+    // Polia pre zadávanie názvu, výživových hodnôt, ingrediencií a inštrukcií.
     private lateinit var etRecipeName: EditText
     private lateinit var etNutritionKcal: EditText
     private lateinit var etNutritionCarbs: EditText
@@ -22,17 +25,36 @@ class AddRecipeActivity : AppCompatActivity() {
     private lateinit var spinnerCategory: Spinner
     private lateinit var btnSaveRecipe: Button
 
+    // ViewModel, ktorý sa stará o načítanie kategórií a vytvorenie nového receptu.
+    private lateinit var viewModel: AddRecipeViewModel
+
+    // Mapovanie názvov kategórií na ich ID.
+    private val categoryMap = mutableMapOf<String, String>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_recipe)
 
-        initializeViews() // Inicializácia UI komponentov
-        setupBackButton() // Nastavenie tlačidla na návrat späť
-        fetchCategories() // Načítanie dostupných kategórií
-        setupSaveButton() // Nastavenie tlačidla na uloženie receptu
+        // Inicializácia ViewModelu.
+        viewModel = ViewModelProvider(this).get(AddRecipeViewModel::class.java)
+
+        // Pripravenie UI prvkov.
+        initializeViews()
+        setupBackButton()
+
+        // Sledujeme LiveData s mapou kategórií.
+        observeViewModel()
+
+        // Načítame zoznam kategórií (API volanie).
+        viewModel.fetchCategories(onError = { msg ->
+            showToast(msg)
+        })
+
+        // Nastavenie tlačidla "Uložiť recept".
+        setupSaveButton()
     }
 
-    // Inicializuje všetky potrebné UI komponenty
+    // Priradenie jednotlivých UI prvkov k premennej.
     private fun initializeViews() {
         etRecipeName = findViewById(R.id.et_recipe_name)
         etNutritionKcal = findViewById(R.id.et_nutrition_kcal)
@@ -45,67 +67,53 @@ class AddRecipeActivity : AppCompatActivity() {
         btnSaveRecipe = findViewById(R.id.btn_save_recipe)
     }
 
-    // Nastavenie tlačidla na návrat späť
+    // Umožňuje návrat na predchádzajúcu obrazovku.
     private fun setupBackButton() {
         findViewById<ImageButton>(R.id.img_toolbar_btn_back).setOnClickListener { onBackPressed() }
     }
 
-    // Načíta kategórie z API a nastaví ich do spinneru
-    private fun fetchCategories() {
-        ApiClient.instance.create(RecipeCategoryApi::class.java)
-            .getAllCategories()
-            .enqueue(object : Callback<List<Category>> {
-                override fun onResponse(call: Call<List<Category>>, response: Response<List<Category>>) {
-                    if (response.isSuccessful) {
-                        response.body()?.let { categoryList ->
-                            // Vymazanie existujúcich a pridanie nových kategórií
-                            categoryMap.clear()
-                            categoryList.forEach { category ->
-                                categoryMap[category.categoryName] = category.categoryId
-                            }
+    // Sledujeme stav LiveData z ViewModelu a meníme UI (napr. Spinner) podľa kategórií.
+    private fun observeViewModel() {
+        viewModel.categoryMap.observe(this, Observer { newMap ->
+            categoryMap.clear()
+            categoryMap.putAll(newMap)
 
-                            // Nastavenie kategórií do spinneru
-                            spinnerCategory.adapter = ArrayAdapter(
-                                this@AddRecipeActivity,
-                                android.R.layout.simple_spinner_item,
-                                categoryMap.keys.toList()
-                            ).apply {
-                                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                            }
-                        }
-                    } else {
-                        showToast("Kategórie sa nepodarilo načítať.")
-                    }
-                }
-
-                override fun onFailure(call: Call<List<Category>>, t: Throwable) {
-                    showToast("Chyba pri načítavaní kategórií.")
-                }
-            })
+            // Nastavíme názvy kategórií do spinnera
+            val categoryNames = categoryMap.keys.toList()
+            val adapter = ArrayAdapter(
+                this@AddRecipeActivity,
+                android.R.layout.simple_spinner_item,
+                categoryNames
+            ).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            spinnerCategory.adapter = adapter
+        })
     }
 
-    // Nastavenie tlačidla na uloženie receptu
+    // Spracovanie kliknutia na tlačidlo "Uložiť recept".
     private fun setupSaveButton() {
         btnSaveRecipe.setOnClickListener {
-            val recipe = collectRecipeData() // Zber údajov z formulára
-            saveRecipe(recipe) // Uloženie receptu na server
+            val recipe = collectRecipeData()
+            viewModel.createRecipe(
+                recipe = recipe,
+                onSuccess = {
+                    setResult(RESULT_OK)
+                    showToast("Recept úspešne pridaný!")
+                    finish()
+                },
+                onError = { msg ->
+                    showToast(msg)
+                }
+            )
         }
     }
 
-    // Zber údajov z formulára a vytvorenie objektu receptu
+    // Získa údaje z textových polí, vytvorí nový Recipe objekt.
     private fun collectRecipeData(): Recipe {
-        val ingredients = etIngredients.text.toString().split(",").mapNotNull { ingredientText ->
-            val parts = ingredientText.trim().split(" ")
-            if (parts.isNotEmpty()) {
-                Ingredient(
-                    name = parts[0],
-                    weight = parts.getOrNull(1),
-                    unit = parts.getOrNull(2) ?: ""
-                )
-            } else null
-        }
+        val ingredients = parseIngredients(etIngredients.text.toString())
         val nutrition = Nutrition(
-            perServing = "100g",
+            perServing = "100g", // Alebo si môžeš spraviť UI pole
             kcal = etNutritionKcal.text.toString().toDoubleOrNull() ?: 0.0,
             carbohydrates = etNutritionCarbs.text.toString().toDoubleOrNull() ?: 0.0,
             fats = etNutritionFats.text.toString().toDoubleOrNull() ?: 0.0,
@@ -123,28 +131,21 @@ class AddRecipeActivity : AppCompatActivity() {
         )
     }
 
-    // Uloženie receptu na server
-    private fun saveRecipe(recipe: Recipe) {
-        ApiClient.instance.create(RecipeCategoryApi::class.java)
-            .createRecipe(recipe)
-            .enqueue(object : Callback<Recipe> {
-                override fun onResponse(call: Call<Recipe>, response: Response<Recipe>) {
-                    if (response.isSuccessful) {
-                        setResult(RESULT_OK)
-                        showToast("Recept úspešne pridaný!")
-                        finish() // Návrat na predchádzajúcu obrazovku
-                    } else {
-                        showToast("Nepodarilo sa pridať recept.")
-                    }
-                }
-
-                override fun onFailure(call: Call<Recipe>, t: Throwable) {
-                    showToast("Chyba pri pridávaní receptu.")
-                }
-            })
+    // Rozdelí reťazec ingrediencií na jednotlivé Ingredient objekty.
+    private fun parseIngredients(input: String): List<Ingredient> {
+        return input.split(",").mapNotNull { ingredientText ->
+            val parts = ingredientText.trim().split(" ")
+            if (parts.isNotEmpty()) {
+                Ingredient(
+                    name = parts[0],
+                    weight = parts.getOrNull(1),
+                    unit = parts.getOrNull(2) ?: ""
+                )
+            } else null
+        }
     }
 
-    // Zobrazí toast so správou
+    // Zobrazí toast s daným textom.
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
